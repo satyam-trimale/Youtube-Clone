@@ -1,0 +1,16 @@
+{
+  "name": "youtube",
+  "version": "1.0.0",
+  "description": "A backend Proj",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "javascript",
+    "backend",
+    "chai"
+  ],
+  "author": "Satyam Trimale",
+  "license": "ISC"
+}
