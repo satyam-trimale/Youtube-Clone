@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { ApiReponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -92,7 +92,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   return res.status(201).json(
     //201: HTTP status for resource creation.
-    new ApiReponse(200, createdUser, "User Registered Successfully")
+    new ApiResponse(200, createdUser, "User Registered Successfully")
   )
 })
 
@@ -144,7 +144,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
-      new ApiReponse(
+      new ApiResponse(
         200,
         {
           user: loggedInUser,
@@ -175,7 +175,7 @@ const logoutUser = asyncHandler(async (req,res) =>{
     .status(200)
     .clearCookie("accessToken",options)
     .clearCookie("refreshToken",options)
-    .json(new ApiReponse(200,{},"User Logged Out"))
+    .json(new ApiResponse(200,{},"User Logged Out"))
 })
 const refreshAccessToken = asyncHandler(async (req,res)=>{
   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
@@ -206,7 +206,7 @@ const refreshAccessToken = asyncHandler(async (req,res)=>{
     .cookie("accessToken",accessToken,options)
     .cookie("refreshToken",newRefreshToken,options)
     .json(
-      new ApiReponse(
+      new ApiResponse(
         200,
         {accessToken, refreshToken : newRefreshToken},
         "Access Token Refreshed"
@@ -228,12 +228,12 @@ const changeCurrentPassword = asyncHandler(async(req,res) =>{
 
   return res
   .status(200)
-  .json(new ApiReponse(200,{},"Password Changed Successfully"))
+  .json(new ApiResponse(200,{},"Password Changed Successfully"))
 })
 const getCurrentUser = asyncHandler(async(req,res)=>{
   return res
   .status(200)
-  .json(new ApiReponse(
+  .json(new ApiResponse(
     200,
     req.user,
     "User fethched Successfully"
