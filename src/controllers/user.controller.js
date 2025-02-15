@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -268,7 +268,14 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatar.url) {
     throw new ApiError(400, "Error while uploading avatar");
   }
-  const user = User.findByIdAndUpdate(
+  //TODO: delete old image - assignment
+  if(req.user?.avatar){
+        // Extract public_id from old avatar URL
+        const oldPublicId = req.user?.avatar.split("/").pop().split(".")[0];
+        await deleteFromCloudinary(oldPublicId);
+
+  }
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
