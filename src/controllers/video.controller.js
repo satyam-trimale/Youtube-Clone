@@ -11,8 +11,57 @@ import {
 import { response } from "express";
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "desc",
+    userId,
+  } = req.query;
   //TODO: get all videos based on query, sort, pagination
+  const pageNumber = parseInt(page, 10);
+  const pageLimit = parseInt(limit, 10);
+
+  let searchConditions = {};
+
+  if (query) {
+    searchConditions.$or = [
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
+  }
+  if (userId && isValidObjectId(userId)) {
+    searchConditions.owner = userId;
+  }
+  const sortOrder = {};
+  sortOrder[sortBy] = sortType === "asc" ? 1 : -1; //In MongoDB, sorting is controlled using numeric values:
+
+  // 1 → Ascending Order (Smallest to Largest)
+  // -1 → Descending Order (Largest to Smallest)
+  const videos = await Video.find(searchConditions)
+    .sort(sortOrder)
+    .skip((pageNumber - 1) * pageLimit)
+    .limit(pageLimit);
+
+  const totalVideos = await Video.countDocuments(searchConditions);
+  const totalPages = Math.ceil(totalVideos / pageLimit);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        videos,
+        pagination: {
+          page: pageNumber,
+          limit: pageLimit,
+          totalPages,
+          totalVideos,
+        },
+      },
+      "Videos Retrieved Successfully"
+    )
+  );
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -80,7 +129,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  let thumbnailUrl = oldVideo.thumbnail // Default to old thumbnail
+  let thumbnailUrl = oldVideo.thumbnail; // Default to old thumbnail
 
   // Check if a new thumbnail is uploaded
 
@@ -96,7 +145,7 @@ const updateVideo = asyncHandler(async (req, res) => {
       const oldPublicId = oldVideo.thumbnail.split("/").pop().split(".")[0];
       await deleteFromCloudinary(oldPublicId);
     }
-    thumbnailUrl = thumbnailResponse.url
+    thumbnailUrl = thumbnailResponse.url;
   }
   const video = await Video.findByIdAndUpdate(
     videoId,
@@ -119,6 +168,30 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: delete video
+  if (!videoId) {
+    throw new ApiError(400, "Video ID not Found");
+  }
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(401, "Video not found");
+  }
+  // console.log("Video File URL:", video.videoFile);
+  // console.log("thumbnail File URL:", video.thumbnail);
+
+  // videoFile = video.videoFile
+  // thumbnail = video.thumbnail
+  if (video.videoFile) {
+    const videoPublicId = video.videoFile.split("/").pop().split(".")[0];
+    await deleteFromCloudinary(videoPublicId, "video");
+  }
+  if (video.thumbnail) {
+    const thumbnailPublicId = video.thumbnail.split("/").pop().split(".")[0];
+    await deleteFromCloudinary(thumbnailPublicId);
+  }
+  await Video.findByIdAndDelete(videoId);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Video Deleted Successfully"));
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
