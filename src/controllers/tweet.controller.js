@@ -78,7 +78,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
   if(!tweet.owner || tweet.owner.toString() !== req.user._id.toString()){
     throw new ApiError(403,"You are not allowed to delete this tweet")
   }
-  await Tweet.findByIdAndDelete(tweetId)
+  await tweet.deleteOne(); // More efficient than findByIdAndDelete
   return res
   .status(200)
   .json(new ApiResponse(200,{},"Tweet deleted successfully"))
